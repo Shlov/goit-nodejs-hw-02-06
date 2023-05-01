@@ -3,7 +3,6 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const gravatar = require('gravatar');
 
-// const Jimp = require("jimp");
 const formatAvatar = require('../helpers/formatAvatar');
 const path = require('path');
 

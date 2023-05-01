@@ -1,5 +1,4 @@
 const Jimp = require("jimp");
-// const path = require('path');
 
 const formatAvatar = async(pathOriginAvatar, pathNewAvatar) => {
   const newAvatar = await Jimp.read(pathOriginAvatar);
