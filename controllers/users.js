@@ -3,6 +3,10 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const gravatar = require('gravatar');
 
+// const Jimp = require("jimp");
+const formatAvatar = require('../helpers/formatAvatar');
+const path = require('path');
+
 const {SECRET_KEY} = process.env;
 
 
@@ -70,22 +74,41 @@ const patchSubscription = async(req, res, next) => {
   try {
     if (!Object.keys(req.body).includes('subscription')) {
       return res.status(400).json({ message: "missing field subscription" });
-    }
+    };
     console.log({subscription: req.body.subscription})
     const result = await updateSubUser(req.user.id, {subscription: req.body.subscription});
     if (result) {
       return res.json(result);
-    }
+    };
     res.status(404).json({ message: "Not found" });
   } catch (error) {
     next(error);
-  }
+  };
 };
+
+const patchAvatar = async(req, res, next) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: "avatar file missing" });
+    };    
+    const avatarsPath = path.join(__dirname, '../', '/public', '/avatars', `${req.user.id}-avatar.png`);
+    formatAvatar(req.file.path, avatarsPath);    
+    const result = await updateSubUser(req.user.id, {avatarURL: avatarsPath});
+    if (result) {
+      return res.json({ "avatarURL": avatarsPath });
+    };
+    res.status(404).json({ message: "Not found" });
+  } catch (error) {
+    next(error);
+  };
+};
+
 
 module.exports = {
   register,
   login,
   logout,
   current,
-  patchSubscription
+  patchSubscription,
+  patchAvatar
 };
