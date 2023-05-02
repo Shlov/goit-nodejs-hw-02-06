@@ -30,6 +30,8 @@ describe('login', () => {
       // await fs.writeFile(path.resolve("./logTest.json"), response, "utf-8");
     expect(response.statusCode).toBe(200);
     expect(response._body.user.email).toBe('testTests@mail.ua');
+    // expect(response._body.token).toBe('testTests@mail.ua');
+    // expect(response._body.user.subscription).toBe('testTests@mail.ua');
   });
 
 });
