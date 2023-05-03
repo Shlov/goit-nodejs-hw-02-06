@@ -23,6 +23,10 @@ const users = new Schema({
   token: {
     type: String,
     default: null
+  },
+  avatarURL: {
+    type: String,
+    default: null
   }
 }, {timestamps: true}
 );

@@ -1,6 +1,10 @@
 const {checkUser, addUser, recordToken, updateSubUser} = require('../models/users');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const gravatar = require('gravatar');
+
+const formatAvatar = require('../helpers/formatAvatar');
+const path = require('path');
 
 const {SECRET_KEY} = process.env;
 
@@ -13,7 +17,7 @@ const register = async(req, res, next) => {
       return res.status(409).json({message: 'Email in use'});
     }
     const hashPassword = bcrypt.hashSync(password, bcrypt.genSaltSync(10));
-    const newUser = await addUser({name, email, password: hashPassword});
+    const newUser = await addUser({name, email, password: hashPassword, avatarURL: gravatar.url(email, { d: 'retro' })});
     res.status(201).json({user: {email: newUser.email, subscription: newUser.subscription}});
   } catch (error) {
     next(error);
@@ -69,22 +73,41 @@ const patchSubscription = async(req, res, next) => {
   try {
     if (!Object.keys(req.body).includes('subscription')) {
       return res.status(400).json({ message: "missing field subscription" });
-    }
+    };
     console.log({subscription: req.body.subscription})
     const result = await updateSubUser(req.user.id, {subscription: req.body.subscription});
     if (result) {
       return res.json(result);
-    }
+    };
     res.status(404).json({ message: "Not found" });
   } catch (error) {
     next(error);
-  }
+  };
 };
+
+const patchAvatar = async(req, res, next) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: "avatar file missing" });
+    };    
+    const avatarsPath = path.join('/avatars', `${req.user.id}-avatar.png`);
+    formatAvatar(req.file.path, avatarsPath);    
+    const result = await updateSubUser(req.user.id, {avatarURL: avatarsPath});
+    if (result) {
+      return res.json({ "avatarURL": avatarsPath });
+    };
+    res.status(404).json({ message: "Not found" });
+  } catch (error) {
+    next(error);
+  };
+};
+
 
 module.exports = {
   register,
   login,
   logout,
   current,
-  patchSubscription
+  patchSubscription,
+  patchAvatar
 };
