@@ -21,17 +21,35 @@ describe('login', () => {
     await mongoose.disconnect(DB_TEST_HOST);
   });
 
-  it('login user', async () => {
+  it('login user status', async () => {
     const response = await supertest(app).post('/users/login').send({
       email: "testTests@mail.ua",
       password: "qwerty"
       });
       // console.log(response);
       // await fs.writeFile(path.resolve("./logTest.json"), response, "utf-8");
+
+      //відповідь повина мати статус-код 200
     expect(response.statusCode).toBe(200);
+  });
+
+  it('login user token', async () => {
+    const response = await supertest(app).post('/users/login').send({
+      email: "testTests@mail.ua",
+      password: "qwerty"
+      });
+    // у відповіді повинен повертатися токен
+    expect(response._body.token).toBeTruthy();
+  });
+
+  it('login user email and subscription', async () => {
+    const response = await supertest(app).post('/users/login').send({
+      email: "testTests@mail.ua",
+      password: "qwerty"
+      });
+    // у відповіді повинен повертатися об'єкт user з 2 полями email и subscription з типом даних String
     expect(response._body.user.email).toBe('testTests@mail.ua');
-    // expect(response._body.token).toBe('testTests@mail.ua');
-    // expect(response._body.user.subscription).toBe('testTests@mail.ua');
+    expect(response._body.user.subscription).toBe('starter');
   });
 
 });
