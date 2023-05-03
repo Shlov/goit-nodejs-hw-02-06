@@ -90,7 +90,7 @@ const patchAvatar = async(req, res, next) => {
     if (!req.file) {
       return res.status(400).json({ message: "avatar file missing" });
     };    
-    const avatarsPath = path.join(__dirname, '../', '/public', '/avatars', `${req.user.id}-avatar.png`);
+    const avatarsPath = path.join('/avatars', `${req.user.id}-avatar.png`);
     formatAvatar(req.file.path, avatarsPath);    
     const result = await updateSubUser(req.user.id, {avatarURL: avatarsPath});
     if (result) {
