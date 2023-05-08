@@ -15,15 +15,12 @@ const nodemailerConfig = {
 
 const transporter = nodemailer.createTransport(nodemailerConfig);
 
-const sendEmail = async(data) => {
-  const mail = {...data, from: META_USER };
+const sendEmail = (data) => {
+  const mail = { from: META_USER, ...data };
   console.log('mail in sendEmail', mail);
-  try {
-    await transporter.sendMail(mail);
-    return true
-  } catch (error) {
-    return error
-  }
+  transporter.sendMail(mail)
+  .then(info => console.log(info))
+  .catch(err => console.log(err));
 };
 
 module.exports = sendEmail;

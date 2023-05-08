@@ -22,8 +22,9 @@ const register = async(req, res, next) => {
     const hashPassword = bcrypt.hashSync(password, bcrypt.genSaltSync(10));
     const mail = {
       to: email,
-      subject: 'Підтвердження пошти',
-      html: `<a target="_blank" href="http://localhost:3000/users/verify/${verificationToken}">Натисніть для підтвердження пошти</a>`
+      subject: 'Email confirmation. PhoneBook.',
+      html: `<a target="_blank" href="http://localhost:3000/users/verify/${verificationToken}">To confirm email</a>`,
+      // text: `Натисніть для підтвердження пошти http://localhost:3000/users/verify/${verificationToken}`
     };
     await sendEmail(mail);
 
@@ -38,7 +39,8 @@ const login = async(req, res, next) => {
   try {
     const {email, password} = req.body;
     const result = await checkUser({email: email});
-    if (!result || !result.verify || bcrypt.compareSync(password, result.password)) {
+    console.log(!result || !result.verify || bcrypt.compareSync(password, result.password))
+    if (!result || !result.verify || !bcrypt.compareSync(password, result.password)) {
       return res.status(401).json({message: 'Email or password is wrong'});
     };
     // const passCompare = bcrypt.compareSync(password, result.password);
@@ -117,8 +119,9 @@ const patchAvatar = async(req, res, next) => {
 
 const verifyEmail = async(req, res, next) => {
   const {verificationToken} = req.params;
+  console.log('tut')
   try {
-    if (verificationToken) {
+    if (!verificationToken) {
       return res.status(404).json({ message: "Not found" });
     };
     const user = await checkUser({verificationToken: verificationToken});
