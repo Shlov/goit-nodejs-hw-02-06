@@ -138,6 +138,32 @@ const verifyEmail = async(req, res, next) => {
   };
 };
 
+const resendVerification = async(req, res, next) => {
+  const {email} = req.body;
+  if (!Object.keys(req.body).includes('email')) {
+    return res.status(400).json({ message: "missing required field email" });
+  };
+  try {
+    const user = await checkUser({email: email});
+    if (!user) {
+      return res.status(404).json({ message: "Not found" });
+    };
+    if (user.verify) {
+      return res.status(400).json({ message: "Verification has already been passed" });
+    };
+    const mail = {
+      to: email,
+      subject: 'Email confirmation. PhoneBook.',
+      html: `<a target="_blank" href="http://localhost:3000/users/verify/${user.verificationToken}">To confirm email</a>`,
+    };
+    await sendEmail(mail);
+    res.json({ message: "Verification email sent" });
+  } catch (error) {
+    next(error);
+  };
+};
+
+
 
 module.exports = {
   register,
@@ -146,5 +172,6 @@ module.exports = {
   current,
   patchSubscription,
   patchAvatar,
-  verifyEmail
+  verifyEmail,
+  resendVerification
 };
