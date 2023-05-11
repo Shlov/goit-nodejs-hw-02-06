@@ -2,6 +2,8 @@ const {checkUser, addUser, recordToken, updateSubUser} = require('../models/user
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const gravatar = require('gravatar');
+const crypto = require('crypto');
+const sendEmail = require('../helpers/sendEmail');
 
 const formatAvatar = require('../helpers/formatAvatar');
 const path = require('path');
@@ -15,9 +17,18 @@ const register = async(req, res, next) => {
     const result = await checkUser({email: email});
     if (result) {
       return res.status(409).json({message: 'Email in use'});
-    }
+    };
+    const verificationToken = crypto.randomUUID();
     const hashPassword = bcrypt.hashSync(password, bcrypt.genSaltSync(10));
-    const newUser = await addUser({name, email, password: hashPassword, avatarURL: gravatar.url(email, { d: 'retro' })});
+    const mail = {
+      to: email,
+      subject: 'Email confirmation. PhoneBook.',
+      html: `<a target="_blank" href="http://localhost:3000/users/verify/${verificationToken}">To confirm email</a>`,
+      // text: `Натисніть для підтвердження пошти http://localhost:3000/users/verify/${verificationToken}`
+    };
+    await sendEmail(mail);
+
+    const newUser = await addUser({name, email, password: hashPassword, avatarURL: gravatar.url(email, { d: 'retro' }), verificationToken});
     res.status(201).json({user: {email: newUser.email, subscription: newUser.subscription}});
   } catch (error) {
     next(error);
@@ -28,13 +39,17 @@ const login = async(req, res, next) => {
   try {
     const {email, password} = req.body;
     const result = await checkUser({email: email});
-    if (!result) {
+    console.log(!result || !result.verify || bcrypt.compareSync(password, result.password))
+    if (!result || !result.verify || !bcrypt.compareSync(password, result.password)) {
       return res.status(401).json({message: 'Email or password is wrong'});
     };
-    const passCompare = bcrypt.compareSync(password, result.password);
-    if (!passCompare) {
-      return res.status(401).json({message: 'Email or password is wrong'});
-    };
+    // const passCompare = bcrypt.compareSync(password, result.password);
+    // if (!passCompare) {
+    //   return res.status(401).json({message: 'Email or password is wrong'});
+    // };
+    // if (!result.verify) {
+    //   return res.status(401).json({message: 'Email or password is wrong'});
+    // };
     const payload = {id: result._id, name: result.name};
     const token = jwt.sign(payload, SECRET_KEY, {expiresIn: '1d'});
     await recordToken(result._id, token);
@@ -102,6 +117,53 @@ const patchAvatar = async(req, res, next) => {
   };
 };
 
+const verifyEmail = async(req, res, next) => {
+  const {verificationToken} = req.params;
+  console.log('tut')
+  try {
+    if (!verificationToken) {
+      return res.status(404).json({ message: "Not found" });
+    };
+    const user = await checkUser({verificationToken: verificationToken});
+    if (!user) {
+      return res.status(404).json({ message: "Not found" });
+    };
+    await updateSubUser(user._id, {verify: true, verificationToken: null});
+    if (user) {
+      return res.json({message: 'Verification successful'});
+    };
+    res.status(404).json({ message: "Not found" });
+  } catch (error) {
+    next(error);
+  };
+};
+
+const resendVerification = async(req, res, next) => {
+  const {email} = req.body;
+  if (!Object.keys(req.body).includes('email')) {
+    return res.status(400).json({ message: "missing required field email" });
+  };
+  try {
+    const user = await checkUser({email: email});
+    if (!user) {
+      return res.status(404).json({ message: "Not found" });
+    };
+    if (user.verify) {
+      return res.status(400).json({ message: "Verification has already been passed" });
+    };
+    const mail = {
+      to: email,
+      subject: 'Email confirmation. PhoneBook.',
+      html: `<a target="_blank" href="http://localhost:3000/users/verify/${user.verificationToken}">To confirm email</a>`,
+    };
+    await sendEmail(mail);
+    res.json({ message: "Verification email sent" });
+  } catch (error) {
+    next(error);
+  };
+};
+
+
 
 module.exports = {
   register,
@@ -109,5 +171,7 @@ module.exports = {
   logout,
   current,
   patchSubscription,
-  patchAvatar
+  patchAvatar,
+  verifyEmail,
+  resendVerification
 };
