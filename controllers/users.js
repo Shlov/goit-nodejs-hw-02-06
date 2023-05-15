@@ -105,11 +105,12 @@ const patchAvatar = async(req, res, next) => {
     if (!req.file) {
       return res.status(400).json({ message: "avatar file missing" });
     };    
-    const avatarsPath = path.join('/avatars', `${req.user.id}-avatar.png`);
-    formatAvatar(req.file.path, avatarsPath);    
-    const result = await updateSubUser(req.user.id, {avatarURL: avatarsPath});
+    const avatarsPath = path.join(__dirname, '../public/avatars', `${req.user.id}-avatar.png`);
+    const avatarsURL = path.join('/avatars', `${req.user.id}-avatar.png`);
+    await formatAvatar(req.file.path, avatarsPath);
+    const result = await updateSubUser(req.user.id, {avatarURL: avatarsURL});
     if (result) {
-      return res.json({ "avatarURL": avatarsPath });
+      return res.json({ "avatarURL": avatarsURL });
     };
     res.status(404).json({ message: "Not found" });
   } catch (error) {
